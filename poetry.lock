@@ -599,6 +599,17 @@ files = [
 typing-extensions = ">=4.12.0"
 
 [[package]]
+name = "uuid"
+version = "1.30"
+description = "UUID object and generation functions (Python 2.3 or higher)"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "uuid-1.30.tar.gz", hash = "sha256:1f87cc004ac5120466f36c5beae48b4c48cc411968eed0eaecd3da82aa96193f"},
+]
+
+[[package]]
 name = "uvicorn"
 version = "0.40.0"
 description = "The lightning-fast ASGI server."
@@ -620,4 +631,4 @@ standard = ["colorama (>=0.4) ; sys_platform == \"win32\"", "httptools (>=0.6.3)
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "9a6be3f0ae68041b407070d94f3abc178e322c0eb9c393a68c031672f7b440cf"
+content-hash = "90490c461eb262d495b728f2e9331551ad7d2d8425abc4ac8b87d12156a66be8"

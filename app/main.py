@@ -1,12 +1,14 @@
 import uvicorn
 from fastapi import FastAPI
 from app.core.config import settings
-from app.core.database import engine
+from app.core.database import engine,Base
 from contextlib import asynccontextmanager
+from app.models import invoice
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
-        print("✅ Database connected successfully")
+        await conn.run_sync(Base.metadata.create_all)
+        print("✅ Database connected successfully and tables created")
     yield
     await engine.dispose()
     print("Disconnected from the database")
