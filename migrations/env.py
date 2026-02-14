@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from app.core.config import settings
 from app.core.database import Base
-from app.models import invoice  # noqa: F401 - registers all models
+from app.models import invoice, whitelist  # noqa: F401 - registers all models
 
 config = context.config
 

@@ -6,7 +6,9 @@ from app.api.v1.endpoints import invoice as invoice_endpoints
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.models import invoice  # noqa: F401 - registers models
+from app.models import whitelist  # noqa: F401 - registers models
 
+from app.api.v1.endpoints import whitelist as whitelist_endpoints
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -31,6 +33,11 @@ app.include_router(
     tags=["invoices"],
 )
 
+app.include_router(
+    whitelist_endpoints.router,
+    prefix="/api/v1/whitelist",
+    tags=["whitelist"],
+)
 
 @app.get("/")
 def root():
