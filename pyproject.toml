@@ -17,6 +17,8 @@ dependencies = [
     "alembic (>=1.18.4,<2.0.0)"
 ]
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -27,3 +29,14 @@ packages = [{include = "app"}]
 
 [tool.poetry.scripts]
 dev = "app.main:start"
+migrate = "app.core.cli:migrate"
+migration = "app.core.cli:migration"
+downgrade = "app.core.cli:downgrade"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+src = ["app", "migrations"]
+
+[tool.ruff.format]
+quote-style = "double"

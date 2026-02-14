@@ -14,9 +14,7 @@ if config.config_file_name is not None:
 # Set the database URL from settings
 config.set_main_option(
     "sqlalchemy.url",
-    settings.DATABASE_URL.replace(
-        "postgresql://", "postgresql+asyncpg://"
-    ),
+    settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
 )
 
 target_metadata = Base.metadata
