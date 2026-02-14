@@ -13,8 +13,15 @@ def test_pipeline() -> None:
     print(f"\n📄 Processing: {file_path}")
     print("-"*50)
 
+    whitelisted_vendors = [
+        "hireTalent",
+        "creative solutions services",
+        "acme corporation",
+    ]
+    is_tax_exempt = True
+    tax_exempt_reason = "C2C services"
     # ── Run Pipeline ──────────────────────────────────
-    result = process_invoice(file_path)
+    result = process_invoice(file_path, whitelisted_vendors, is_tax_exempt, tax_exempt_reason)
 
     # ── Print Results ─────────────────────────────────
     print(f"\n✅ Status:         {result['status']}")

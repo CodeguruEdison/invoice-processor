@@ -22,3 +22,10 @@ class ProductResponse(BaseModel):
 class ProductListResponse(BaseModel):
     total: int
     items: list[ProductResponse]
+    
+class InvoiceTaxExemptUpdate(BaseModel):
+    is_tax_exempt: bool
+    tax_exempt_reason: Optional[str] = Field(
+        None,
+        description="Reason for tax exemption e.g. 'Government entity' or 'Reseller'"
+    )

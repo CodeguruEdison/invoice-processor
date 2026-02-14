@@ -26,10 +26,13 @@ class PipelineState(TypedDict):
     subtotal: Optional[float] = None
     tax_amount: Optional[float] = None
     total_amount: Optional[float] = None
+    is_tax_exempt: bool = False
+    tax_exempt_reason: Optional[str] = None
     confidence_score: float = 0.0
     validation_errors: Optional[list] = None
     retry_count: int = 0
     anomaly_flags: list[str] = []
+    whitelisted_vendors: list[str] = []
     status: PipelineStatus
 
 

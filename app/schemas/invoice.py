@@ -34,6 +34,8 @@ class InvoiceResponse(BaseModel):
     retry_count: int = 0
     created_at: datetime
     updated_at: datetime
+    is_tax_exempt: bool = False
+    tax_exempt_reason: str | None = None
 
 
 class InvoiceListResponse(BaseModel):

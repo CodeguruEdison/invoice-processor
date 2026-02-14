@@ -145,7 +145,8 @@ def build_pipeline() -> StateGraph:
 invoice_pipeline = build_pipeline()
 
 
-def process_invoice(file_path: str) -> InvoiceState:
+def process_invoice(file_path: str,whitelisted_vendors: list[str] | None = None,is_tax_exempt: bool = False,
+    tax_exempt_reason: str | None = None,) -> InvoiceState:
     """
     WHY THIS WRAPPER FUNCTION:
     It hides the complexity of building the initial state
@@ -176,6 +177,12 @@ def process_invoice(file_path: str) -> InvoiceState:
         "validation_errors": [],
         "anomaly_flags": [],
         "status": PipelineStatus.PENDING,
+        "is_tax_exempt": is_tax_exempt,
+        "tax_exempt_reason": tax_exempt_reason,
+        "whitelisted_vendors": [
+            v.lower().strip()
+            for v in (whitelisted_vendors or [])
+        ],
     }
 
     result: InvoiceState = invoice_pipeline.invoke(initial_state)

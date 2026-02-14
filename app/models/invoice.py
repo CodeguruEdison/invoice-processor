@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Float, Integer, DateTime, JSON, Enum as SAEnum
+from sqlalchemy import Boolean, String, Float, Integer, DateTime, JSON, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 import enum
@@ -56,6 +56,14 @@ class Invoice(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    is_tax_exempt: Mapped[bool] = mapped_column(Boolean,
+        default=False,
+        nullable=False,
+    )
+    tax_exempt_reason: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
     )
 
     def __repr__(self) -> str:
