@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings
+from pathlib import Path
+
 from pydantic import ConfigDict
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -9,6 +11,9 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/invoice_db"
     REDIS_URL: str = "redis://localhost:6379/0"
+    UPLOAD_DIR: Path = Path("uploads")
+    ALLOWED_EXTENSIONS: set[str] = {"pdf", "png", "jpg", "jpeg"}
+    MAX_UPLOAD_SIZE_MB: float = 10.0
 
 
 settings = Settings()

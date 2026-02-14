@@ -14,7 +14,8 @@ dependencies = [
     "asyncpg (>=0.31.0,<0.32.0)",
     "greenlet>=3.0.0",
     "uuid (>=1.30,<2.0)",
-    "alembic (>=1.18.4,<2.0.0)"
+    "alembic (>=1.18.4,<2.0.0)",
+    "python-multipart>=0.0.9",
 ]
 
 [tool.poetry.group.dev.dependencies]

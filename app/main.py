@@ -1,13 +1,16 @@
 import uvicorn
-from fastapi import FastAPI
-from app.core.config import settings
-from app.core.database import engine, Base
 from contextlib import asynccontextmanager
-from app.models import invoice
+from fastapi import FastAPI
+
+from app.api.v1.endpoints import invoice as invoice_endpoints
+from app.core.config import settings
+from app.core.database import Base, engine
+from app.models import invoice  # noqa: F401 - registers models
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     async with engine.begin() as conn:
         # await conn.run_sync(Base.metadata.create_all)
         print("✅ Database connected successfully")
@@ -20,6 +23,12 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     lifespan=lifespan,
+)
+
+app.include_router(
+    invoice_endpoints.router,
+    prefix="/api/v1/invoices",
+    tags=["invoices"],
 )
 
 
