@@ -31,3 +31,18 @@ def get_whitelist_service(
 ):
     from app.services.whitelist_service import WhitelistService
     return WhitelistService(repository)
+
+def get_product_repository(
+    db: AsyncSession = Depends(get_db),
+):
+    from app.repositories.product_repository import ProductRepository
+from app.repositories.product_repository_interface import IProductRepository
+    return ProductRepository(db)
+
+
+def get_product_service(
+    repository: IProductRepository = Depends(get_product_repository),
+):
+    from app.services.product_service import ProductService
+    return ProductService(repository)
+

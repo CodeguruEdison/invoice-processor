@@ -88,6 +88,20 @@ poetry run migrate
 poetry run downgrade
 ```
 
+**Create a new API resource** (model, schema, repository, service, router + README):
+
+```bash
+poetry run new-resource <name> [--fields "field:type,..."]
+```
+
+Example:
+
+```bash
+poetry run new-resource product --fields "name:str,description:str|None"
+```
+
+Then create and apply a migration for the new table (see step 5 above). The project README is updated automatically with the new endpoints.
+
 ### 6. Run the app
 
 ```bash
@@ -108,6 +122,10 @@ The API runs at **http://localhost:8000**.
 | `GET`  | `/api/v1/invoices/` | List all invoices |
 | `GET`  | `/api/v1/invoices/{id}` | Get one invoice |
 | `DELETE` | `/api/v1/invoices/{id}` | Delete an invoice |
+| `POST` | `/api/v1/product/` | Create product |
+| `GET`  | `/api/v1/product/` | List all products |
+| `GET`  | `/api/v1/product/{id}` | Get one product |
+| `DELETE` | `/api/v1/product/{id}` | Deactivate product |
 
 Uploaded files are stored under the `uploads/` directory (configurable via `UPLOAD_DIR` in config).
 
