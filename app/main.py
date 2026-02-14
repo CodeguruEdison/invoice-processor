@@ -7,8 +7,8 @@ from app.models import invoice
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        print("✅ Database connected successfully and tables created")
+       # await conn.run_sync(Base.metadata.create_all)
+        print("✅ Database connected successfully)
     yield
     await engine.dispose()
     print("Disconnected from the database")
