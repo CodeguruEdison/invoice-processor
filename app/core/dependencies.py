@@ -5,6 +5,7 @@ from app.services.invoice_service import InvoiceService
 from app.repositories.invoice_repository import InvoiceRepository
 from app.repositories.invoice_repository_interface import IInvoiceRepository
 from app.repositories.whitelist_repository_interface import IWhitelistRepository
+from app.repositories.product_repository_interface import IProductRepository
 
 
 def get_invoice_repository(
@@ -36,7 +37,6 @@ def get_product_repository(
     db: AsyncSession = Depends(get_db),
 ):
     from app.repositories.product_repository import ProductRepository
-from app.repositories.product_repository_interface import IProductRepository
     return ProductRepository(db)
 
 

@@ -475,13 +475,13 @@ def get_{name}_service(
     return {class_name}Service(repository)
 '''
         deps = deps.rstrip() + new_deps + "\n"
-        # Add interface import after last repository interface import
+        # Add interface import after last repository *interface* import (top of file only)
         new_import = f"from app.repositories.{name}_repository_interface import I{class_name}Repository"
         if new_import not in deps:
             lines = deps.split("\n")
             last_idx = -1
             for i, line in enumerate(lines):
-                if line.strip().startswith("from app.repositories.") and "Repository" in line:
+                if "repository_interface" in line and "import I" in line:
                     last_idx = i
             if last_idx >= 0:
                 lines.insert(last_idx + 1, new_import)
