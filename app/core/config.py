@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     UPLOAD_DIR: Path = Path("uploads")
     ALLOWED_EXTENSIONS: set[str] = {"pdf", "png", "jpg", "jpeg"}
     MAX_UPLOAD_SIZE_MB: float = 10.0
+    # Ollama
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3.2:8b"
 
 
 settings = Settings()

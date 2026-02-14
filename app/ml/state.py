@@ -27,9 +27,12 @@ class PipelineState(TypedDict):
     tax_amount: Optional[float] = None
     total_amount: Optional[float] = None
     confidence_score: float = 0.0
-    validation_errors: Optional[dict] = None
+    validation_errors: Optional[list] = None
     retry_count: int = 0
     anomaly_flags: list[str] = []
-    status: PipelineStatus 
-    
-    
+    status: PipelineStatus
+
+
+# Alias used by pipeline and nodes.
+InvoiceState = PipelineState
+
