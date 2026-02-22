@@ -36,10 +36,10 @@ class Invoice(Base):
     tax_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
     total_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
 
-    # JSON fields
-    line_items: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    validation_errors: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    anomaly_flags: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # JSON fields (stored as list; dict shape supported for backward compatibility)
+    line_items: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)
+    validation_errors: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)
+    anomaly_flags: Mapped[dict | list | None] = mapped_column(JSON, nullable=True)
 
     # Processing metadata
     status: Mapped[ProcessingStatus] = mapped_column(

@@ -10,7 +10,7 @@ from app.models import whitelist  # noqa: F401 - registers models
 from app.models import product  # noqa: F401 - registers models
 
 from app.api.v1.endpoints import whitelist as whitelist_endpoints
-from app.api.v1.endpoints import product as product_endpoints
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -39,11 +39,6 @@ app.include_router(
     whitelist_endpoints.router,
     prefix="/api/v1/whitelist",
     tags=["whitelist"],
-)
-app.include_router(
-    product_endpoints.router,
-    prefix="/api/v1/product",
-    tags=["product"],
 )
 
 @app.get("/")
