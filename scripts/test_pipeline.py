@@ -14,9 +14,9 @@ def test_pipeline() -> None:
     print("-"*50)
 
     whitelisted_vendors = [
-        "hireTalent",
-        "creative solutions services",
-        "acme corporation",
+        "TestTalent",
+        "TestCreative Solutions Services",
+        "TestAcme Corporation",
     ]
     is_tax_exempt = True
     tax_exempt_reason = "C2C services"
