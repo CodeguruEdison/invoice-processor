@@ -35,16 +35,19 @@ Invoice Data:
 
 Check specifically for:
 1. Suspiciously round numbers (e.g. exactly $10,000.00)
-2. Vague or generic line item descriptions
+2. Truly vague line item descriptions only (e.g. "Miscellaneous", "Other", "Item 1", "Supplies") — NOT normal product names like "Floral Cotton Dress" or "Cuban Collar Shirt"
 3. Invoice dates on weekends or public holidays
 4. Vendor names that look misspelled or suspicious
 5. Amounts just below common approval thresholds
 6. Missing or duplicate invoice numbers
-7. Line items with unusually high unit prices
+7. Line items with unusually high unit prices (e.g. one item 10x higher than others, or unit price over $5000) — do NOT flag normal retail prices like $100–200
 8. Missing tax ONLY if Tax Exempt is False
 
 IMPORTANT: If Tax Exempt is True, do NOT flag
 missing tax amount as an anomaly.
+
+Only flag clear anomalies. Normal product names and moderate
+prices ($50–500) are not anomalies.
 
 Return ONLY valid JSON:
 {{
