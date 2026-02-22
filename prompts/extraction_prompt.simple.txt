@@ -1,0 +1,22 @@
+Extract invoice data from the text below. Return ONLY valid JSON with these exact keys. Use null when a field is not found. Use numbers for amounts and dates in YYYY-MM-DD.
+
+{{
+    "vendor_name": "string or null",
+    "invoice_number": "string or null",
+    "invoice_date": "YYYY-MM-DD format or null",
+    "line_items": [
+        {{
+            "description": "string",
+            "quantity": number,
+            "unit_price": number,
+            "total": number
+        }}
+    ],
+    "subtotal": number or null,
+    "tax_amount": number or null,
+    "total_amount": number or null,
+    "confidence_score": number between 0.0 and 1.0
+}}
+
+Invoice Text:
+{raw_text}

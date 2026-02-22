@@ -62,11 +62,13 @@ def validation_node(state: InvoiceState) -> InvoiceState:
                 f"Negative amount detected in {field}: {value}"
             )
 
-    # Rule 5: Confidence score
-    if state.get("confidence_score", 0) < 0.6:
+    # Rule 5: Confidence score (guard against None from LLM)
+    confidence = state.get("confidence_score")
+    if confidence is None:
+        errors.append("Missing confidence score (minimum: 0.60)")
+    elif confidence < 0.6:
         errors.append(
-            f"Low confidence score: {state['confidence_score']:.2f} "
-            f"(minimum: 0.60)"
+            f"Low confidence score: {confidence:.2f} (minimum: 0.60)"
         )
 
     # Rule 6: Line items vs subtotal

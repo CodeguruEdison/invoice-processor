@@ -8,9 +8,9 @@ class LineItemSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     description: str
-    quantity: float = Field(gt=0)
-    unit_price: float = Field(gt=0)
-    total: float = Field(gt=0)
+    quantity: float = Field(ge=0)
+    unit_price: float = Field(ge=0)
+    total: float = Field(ge=0)
 
 
 class InvoiceUploadResponse(BaseModel):

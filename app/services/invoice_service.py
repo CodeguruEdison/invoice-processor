@@ -157,7 +157,9 @@ class InvoiceService:
         invoice.subtotal = result.get("subtotal")
         invoice.tax_amount = result.get("tax_amount")
         invoice.total_amount = result.get("total_amount")
-        invoice.confidence_score = result.get("confidence_score", 0.0)
+        # Coerce None to 0.0 so DB NOT NULL is satisfied when LLM returns null
+        confidence = result.get("confidence_score")
+        invoice.confidence_score = confidence if confidence is not None else 0.0
         invoice.retry_count = result.get("retry_count", 0)
 
         # Store as JSON (lists for API response compatibility)

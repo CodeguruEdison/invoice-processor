@@ -90,15 +90,109 @@ If a field is not found, return null for that field.
 Field mapping (use these to find vendor_name):
 - vendor_name: the seller or biller. Extract from any of: "Account Name", "Bill From", "Seller", "Vendor", "From", "Company Name", "Client" (when it means the billing party), "Name" in the header/from section, or the main business name at the top of the invoice. Use the exact name as shown (e.g. "Samira Hadid" if the text says "Account Name: Samira Hadid").
 
+Line items (required when the invoice has an itemized list or table):
+- line_items: list of rows from the invoice table/section. Look for: a table with columns like "Description", "Item", "Qty", "Quantity", "Unit Price", "Rate", "Amount", "Total", "Line Total"; or itemized rows with description and price. Extract EVERY row as an object with "description" (string), "quantity" (number), "unit_price" (number), "total" (number). Use 1 for quantity if not stated. If the invoice has no itemized lines at all, return [].
+
 Important rules:
 - confidence_score should reflect how complete the extraction is
 - All amounts should be numbers not strings
 - invoice_date must be in YYYY-MM-DD format
-- Return empty list for line_items if none found
+- Return empty list for line_items ONLY when there are no itemized lines; when there is a table or list of items, extract every row
 
 Invoice Text:
 {raw_text}
 """
+
+
+def _normalize_line_items(value: object) -> list[dict]:
+    """Ensure line_items is a list of dicts with description, quantity, unit_price, total."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        out: list[dict] = []
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            # Accept common LLM variants: "amount" -> "total", etc.
+            total_val = item.get("total") if item.get("total") is not None else item.get("amount")
+            try:
+                total = float(total_val) if total_val is not None else 0.0
+            except (TypeError, ValueError):
+                total = 0.0
+            qty = _num(item.get("quantity") or item.get("qty"), 1)
+            unit = _num(item.get("unit_price") or item.get("rate") or item.get("price"), 0.0)
+            out.append({
+                "description": str(item.get("description") or item.get("item") or "").strip() or "",
+                "quantity": qty,
+                "unit_price": unit,
+                "total": total,
+            })
+        return _fix_line_item_math(out)
+    return []
+
+
+def _fix_line_item_math(items: list[dict]) -> list[dict]:
+    """
+    Fix line items where LLM left unit_price or total as 0.
+    Infer total = quantity * unit_price or unit_price = total / quantity when possible.
+    """
+    result: list[dict] = []
+    for it in items:
+        qty, unit, total = it["quantity"], it["unit_price"], it["total"]
+        if qty <= 0:
+            result.append(it)
+            continue
+        # Fix missing/zero total from quantity and unit_price
+        if (total is None or total == 0.0) and unit and unit > 0:
+            total = round(qty * unit, 2)
+        # Fix missing/zero unit_price from total and quantity
+        if (unit is None or unit == 0.0) and total and total > 0:
+            unit = round(total / qty, 2) if qty else 0.0
+        result.append({
+            "description": it["description"],
+            "quantity": qty,
+            "unit_price": unit,
+            "total": total,
+        })
+    return result
+
+
+def _fix_line_items_with_subtotal(
+    items: list[dict], subtotal: float | None
+) -> list[dict]:
+    """
+    When subtotal is known and line item totals don't match (e.g. LLM copied
+    previous row's values into the last row), fix the last line so its total
+    = subtotal - sum(others), then set unit_price = total / quantity.
+    """
+    if not items or subtotal is None:
+        return items
+    try:
+        sub = float(subtotal)
+    except (TypeError, ValueError):
+        return items
+    line_total = sum(it["total"] for it in items)
+    if abs(line_total - sub) < 0.02:
+        return items
+    # Fix last line: total = subtotal - sum(rest)
+    rest_total = sum(it["total"] for it in items[:-1])
+    correct_last_total = round(sub - rest_total, 2)
+    if correct_last_total < 0:
+        return items
+    last = items[-1].copy()
+    qty = last["quantity"]
+    last["total"] = correct_last_total
+    last["unit_price"] = round(correct_last_total / qty, 2) if qty else 0.0
+    return items[:-1] + [last]
+
+
+def _num(val: object, default: float) -> float:
+    if val is None:
+        return default
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return default
 
 
 def _load_extraction_prompt() -> str:
@@ -170,9 +264,14 @@ def extraction_node(state: InvoiceState) -> InvoiceState:
         # 3. parser.invoke(llm_response)      → parses JSON
         result: dict = chain.invoke({"raw_text": state["raw_text"]})
 
+        line_items = _normalize_line_items(result.get("line_items"))
+        line_items = _fix_line_items_with_subtotal(
+            line_items, result.get("subtotal")
+        )
         logger.info(
-            f"Extraction complete. "
-            f"Confidence: {result.get('confidence_score', 0)}"
+            "Extraction complete. Confidence: %s, line_items: %d",
+            result.get("confidence_score", 0),
+            len(line_items),
         )
 
         # ── Update State ──────────────────────────────────
@@ -183,7 +282,7 @@ def extraction_node(state: InvoiceState) -> InvoiceState:
             "vendor_name": result.get("vendor_name"),
             "invoice_number": result.get("invoice_number"),
             "invoice_date": result.get("invoice_date"),
-            "line_items": result.get("line_items", []),
+            "line_items": line_items,
             "subtotal": result.get("subtotal"),
             "tax_amount": result.get("tax_amount"),
             "total_amount": result.get("total_amount"),
