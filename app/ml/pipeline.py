@@ -1,10 +1,16 @@
+from typing import TYPE_CHECKING
+
+import logging
 from langgraph.graph import StateGraph, END
+
 from app.ml.state import InvoiceState, PipelineStatus
-from app.ml.nodes.ocr_node import ocr_node
+from app.ml.nodes.ocr_node import make_ocr_node
 from app.ml.nodes.extraction_node import extraction_node
 from app.ml.nodes.validation_node import validation_node, should_retry
 from app.ml.nodes.anomaly_node import anomaly_node
-import logging
+
+if TYPE_CHECKING:
+    from app.services.docling_service import DoclingService
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +60,9 @@ def failed_node(state: InvoiceState) -> InvoiceState:
     }
 
 
-def build_pipeline() -> StateGraph:
+def build_pipeline(
+    docling_service: "DoclingService | None" = None,
+) -> StateGraph:
     """
     WHY WE USE A FUNCTION TO BUILD THE PIPELINE:
     Instead of building the graph at module level
@@ -62,6 +70,9 @@ def build_pipeline() -> StateGraph:
     - Easier to test (call build_pipeline() in tests)
     - Easier to create multiple instances if needed
     - Clearer separation between definition and execution
+
+    DoclingService is injected so the OCR node can use Docling
+    for document parsing when OCR_USE_DOCLING is True.
 
     HOW LANGGRAPH WORKS:
     Think of it like drawing a flowchart in code:
@@ -82,7 +93,8 @@ def build_pipeline() -> StateGraph:
     # This decouples the node functions from the graph
     # structure — we could swap ocr_node for a different
     # implementation without changing the edge definitions.
-    graph.add_node("ocr", ocr_node)
+    # OCR node receives docling_service via closure (dependency injection).
+    graph.add_node("ocr", make_ocr_node(docling_service))
     graph.add_node("extract", extraction_node)
     graph.add_node("validate", validation_node)
     graph.add_node("retry", retry_node)
@@ -137,16 +149,13 @@ def build_pipeline() -> StateGraph:
     return graph.compile()
 
 
-# ── Module Level Instance ──────────────────────────────────
-# WHY MODULE LEVEL:
-# We build the pipeline once when the module loads.
-# Building it per request would be wasteful —
-# the graph structure never changes between requests.
-invoice_pipeline = build_pipeline()
-
-
-def process_invoice(file_path: str,whitelisted_vendors: list[str] | None = None,is_tax_exempt: bool = False,
-    tax_exempt_reason: str | None = None,) -> InvoiceState:
+def process_invoice(
+    file_path: str,
+    whitelisted_vendors: list[str] | None = None,
+    is_tax_exempt: bool = False,
+    tax_exempt_reason: str | None = None,
+    docling_service: "DoclingService | None" = None,
+) -> InvoiceState:
     """
     WHY THIS WRAPPER FUNCTION:
     It hides the complexity of building the initial state
@@ -185,7 +194,9 @@ def process_invoice(file_path: str,whitelisted_vendors: list[str] | None = None,
         ],
     }
 
-    result: InvoiceState = invoice_pipeline.invoke(initial_state)
+    # Build pipeline with injected DoclingService (built per request when DI is used)
+    pipeline = build_pipeline(docling_service=docling_service)
+    result: InvoiceState = pipeline.invoke(initial_state)
     logger.info(
         f"Pipeline completed. "
         f"Status: {result['status']} "

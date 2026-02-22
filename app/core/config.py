@@ -17,6 +17,15 @@ class Settings(BaseSettings):
     # Ollama
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.2:8b"
+    # Optional vision model for OCR (e.g. llava:7b, llama3.2-vision:11b)
+    OLLAMA_VISION_MODEL: str = ""
+    # Use vision LLM for OCR instead of Tesseract when set and OLLAMA_VISION_MODEL is set
+    OCR_USE_VISION_LLM: bool = False
+    # Use Docling for document parsing (PDF/images) when True and DoclingService is injected
+    OCR_USE_DOCLING: bool = True
+    # Optional path to extraction prompt file. If set and file exists, use it instead of built-in prompt.
+    # File must contain {raw_text}. Edit this file to adapt to different invoice formats without code changes.
+    EXTRACTION_PROMPT_FILE: str | None = None
 
 
 settings = Settings()

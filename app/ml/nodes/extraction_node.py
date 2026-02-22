@@ -1,9 +1,12 @@
-from langchain_ollama import ChatOllama
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
-from app.ml.state import InvoiceState, PipelineStatus
-from app.core.config import settings
+from pathlib import Path
+
 import logging
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_ollama import ChatOllama
+
+from app.core.config import settings
+from app.ml.state import InvoiceState, PipelineStatus
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +58,10 @@ llm = ChatOllama(
 # LLMs perform much better with explicit instructions.
 # We tell it exactly what fields to extract, what format
 # to use, and what to return when a field is missing.
-prompt = ChatPromptTemplate.from_template("""
+#
+# Prompt can be overridden via EXTRACTION_PROMPT_FILE so you can tune
+# for different invoice types without changing code.
+DEFAULT_EXTRACTION_PROMPT = """
 You are an expert invoice parser with years of experience
 extracting structured data from invoices.
 
@@ -81,6 +87,9 @@ If a field is not found, return null for that field.
     "confidence_score": number between 0.0 and 1.0
 }}
 
+Field mapping (use these to find vendor_name):
+- vendor_name: the seller or biller. Extract from any of: "Account Name", "Bill From", "Seller", "Vendor", "From", "Company Name", "Client" (when it means the billing party), "Name" in the header/from section, or the main business name at the top of the invoice. Use the exact name as shown (e.g. "Samira Hadid" if the text says "Account Name: Samira Hadid").
+
 Important rules:
 - confidence_score should reflect how complete the extraction is
 - All amounts should be numbers not strings
@@ -89,7 +98,32 @@ Important rules:
 
 Invoice Text:
 {raw_text}
-""")
+"""
+
+
+def _load_extraction_prompt() -> str:
+    """Use prompt from EXTRACTION_PROMPT_FILE if set and file exists, else default."""
+    prompt_file = settings.EXTRACTION_PROMPT_FILE
+    if prompt_file:
+        path = Path(prompt_file)
+        if path.exists():
+            text = path.read_text(encoding="utf-8")
+            if "{raw_text}" in text:
+                logger.info("Using extraction prompt from file: %s", path)
+                return text
+            logger.warning(
+                "EXTRACTION_PROMPT_FILE %s does not contain {raw_text}, using default prompt",
+                path,
+            )
+        else:
+            logger.warning(
+                "EXTRACTION_PROMPT_FILE %s not found, using default prompt",
+                path,
+            )
+    return DEFAULT_EXTRACTION_PROMPT
+
+
+prompt = ChatPromptTemplate.from_template(_load_extraction_prompt())
 
 # ── Chain ─────────────────────────────────────────────────
 # WHY PIPE OPERATOR:

@@ -114,6 +114,10 @@ def should_retry(state: InvoiceState) -> str:
     RETURN VALUES must match the keys in add_conditional_edges()
     in pipeline.py — we will wire this up next.
     """
+    if state["status"] == PipelineStatus.FAILED:
+        logger.warning("Pipeline already failed — routing to failed node")
+        return "failed"
+
     has_errors = bool(state["validation_errors"])
     retry_count = state["retry_count"]
 

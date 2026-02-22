@@ -1,10 +1,21 @@
+import logging
+import sys
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.v1.endpoints import invoice as invoice_endpoints
 from app.core.config import settings
-from app.core.database import Base, engine
+from app.core.database import Base, engine  # noqa: F401
+
+# Send app logs (including Docling) to the terminal; uvicorn often doesn't show them otherwise
+_app_log = logging.getLogger("app")
+_app_log.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+if not _app_log.handlers:
+    _handler = logging.StreamHandler(sys.stderr)
+    _handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+    _app_log.addHandler(_handler)
+
 from app.models import invoice  # noqa: F401 - registers models
 from app.models import whitelist  # noqa: F401 - registers models
 from app.models import product  # noqa: F401 - registers models

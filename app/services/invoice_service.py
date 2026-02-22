@@ -1,8 +1,10 @@
 from fastapi import UploadFile, HTTPException
 from app.repositories.invoice_repository_interface import IInvoiceRepository
 from app.repositories.whitelist_repository_interface import IWhitelistRepository
+from app.services.docling_service import DoclingService
 from app.models.invoice import Invoice, ProcessingStatus
 from app.core.config import settings
+from app.core.file_validation import content_matches_extension
 from app.schemas.invoice import (
     InvoiceUploadResponse,
     InvoiceListResponse,
@@ -23,15 +25,20 @@ class InvoiceService:
     The service needs both invoice data and whitelist data.
     By injecting both we keep the service layer clean
     and testable — we can mock both repositories in tests.
+
+    DoclingService is injected for OCR; when OCR_USE_DOCLING is True
+    the pipeline uses Docling for document text extraction.
     """
 
     def __init__(
         self,
         invoice_repository: IInvoiceRepository,
         whitelist_repository: IWhitelistRepository,
+        docling_service: DoclingService,
     ) -> None:
         self.invoice_repository = invoice_repository
         self.whitelist_repository = whitelist_repository
+        self.docling_service = docling_service
 
     async def upload_and_process_invoice(
         self,
@@ -69,6 +76,19 @@ class InvoiceService:
                 f"Max: {settings.MAX_UPLOAD_SIZE_MB}MB",
             )
 
+        if len(contents) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="File is empty",
+            )
+
+        if not content_matches_extension(contents, ext):
+            raise HTTPException(
+                status_code=400,
+                detail="File content does not match extension. "
+                "The file may be corrupted or mislabeled.",
+            )
+
         # ── Save File ─────────────────────────────────────
         unique_filename: str = f"{uuid.uuid4()}_{file.filename}"
         file_path = settings.UPLOAD_DIR / unique_filename
@@ -104,6 +124,7 @@ class InvoiceService:
                 whitelisted_vendors=whitelisted_names,
                 is_tax_exempt=invoice.is_tax_exempt,
                 tax_exempt_reason=invoice.tax_exempt_reason,
+                docling_service=self.docling_service,
             )
             logger.info(
                 f"Pipeline completed for {invoice.id}: "

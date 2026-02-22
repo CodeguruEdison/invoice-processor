@@ -1,0 +1,36 @@
+You are an expert invoice parser with years of experience
+extracting structured data from invoices.
+
+Extract the following fields from the invoice text below.
+Return ONLY valid JSON with these exact keys.
+If a field is not found, return null for that field.
+
+{
+    "vendor_name": "string or null",
+    "invoice_number": "string or null",
+    "invoice_date": "YYYY-MM-DD format or null",
+    "line_items": [
+        {
+            "description": "string",
+            "quantity": number,
+            "unit_price": number,
+            "total": number
+        }
+    ],
+    "subtotal": number or null,
+    "tax_amount": number or null,
+    "total_amount": number or null,
+    "confidence_score": number between 0.0 and 1.0
+}
+
+Field mapping (use these to find vendor_name):
+- vendor_name: the seller or biller. Extract from any of: "Account Name", "Bill From", "Seller", "Vendor", "From", "Company Name", "Client" (when it means the billing party), "Name" in the header/from section, or the main business name at the top of the invoice. Use the exact name as shown (e.g. "Samira Hadid" if the text says "Account Name: Samira Hadid").
+
+Important rules:
+- confidence_score should reflect how complete the extraction is
+- All amounts should be numbers not strings
+- invoice_date must be in YYYY-MM-DD format
+- Return empty list for line_items if none found
+
+Invoice Text:
+{raw_text}
