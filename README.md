@@ -2,6 +2,80 @@
 
 FastAPI app for uploading, storing, and managing invoices with PostgreSQL and optional Redis.
 
+## Architecture
+
+![Architecture diagram](docs/architecture.png)
+
+<details>
+<summary>Mermaid source</summary>
+
+```mermaid
+flowchart TB
+    subgraph Client["Client"]
+        User[User / API Client]
+    end
+
+    subgraph API["API Layer"]
+        FastAPI[FastAPI App]
+        InvoiceRouter["/api/v1/invoices"]
+        WhitelistRouter["/api/v1/whitelist"]
+    end
+
+    subgraph Services["Service Layer"]
+        InvoiceService[InvoiceService]
+        WhitelistService[WhitelistService]
+        DoclingService[DoclingService]
+    end
+
+    subgraph DataAccess["Data Access"]
+        InvoiceRepo[InvoiceRepository]
+        WhitelistRepo[WhitelistRepository]
+    end
+
+    subgraph Pipeline["ML Pipeline (LangGraph)"]
+        direction LR
+        OCR[OCR Node]
+        Extract[Extract Node]
+        Validate[Validate Node]
+        Retry[Retry Node]
+        Anomaly[Anomaly Node]
+        Failed[Failed Node]
+        OCR --> Extract --> Validate
+        Validate -->|proceed| Anomaly
+        Validate -->|retry| Retry --> Extract
+        Validate -->|failed| Failed
+        Anomaly --> END
+        Failed --> END
+    end
+
+    subgraph External["External / Storage"]
+        Postgres[(PostgreSQL)]
+        Redis[(Redis)]
+        Ollama[Ollama LLM]
+        DoclingLib[Docling]
+        Uploads[Uploads Dir]
+    end
+
+    User --> FastAPI
+    FastAPI --> InvoiceRouter
+    FastAPI --> WhitelistRouter
+    InvoiceRouter --> InvoiceService
+    WhitelistRouter --> WhitelistService
+    InvoiceService --> InvoiceRepo
+    InvoiceService --> WhitelistRepo
+    InvoiceService --> DoclingService
+    InvoiceService --> Pipeline
+    Pipeline --> DoclingLib
+    Pipeline --> Ollama
+    InvoiceRepo --> Postgres
+    WhitelistRepo --> Postgres
+    InvoiceService --> Uploads
+```
+
+</details>
+
+**Request flow (upload):** Client → FastAPI → Invoice router → InvoiceService (file validation, save to disk) → ML pipeline (OCR → Extract → Validate → Anomaly / Retry / Failed) → InvoiceRepository persists to PostgreSQL. OCR uses Docling when `OCR_USE_DOCLING` is true, otherwise PyMuPDF/pdfplumber/Tesseract or an Ollama vision model. Extraction and anomaly detection use Ollama.
+
 ## Prerequisites
 
 - **Python 3.11+**
