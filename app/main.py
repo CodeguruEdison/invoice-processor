@@ -3,6 +3,9 @@ import sys
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from app.api.v1.endpoints import invoice as invoice_endpoints
 from app.core.config import settings
@@ -40,6 +43,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+if settings.CORS_ORIGINS.strip():
+    origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
 app.include_router(
     invoice_endpoints.router,
     prefix="/api/v1/invoices",
@@ -59,6 +72,24 @@ def root():
         "app_version": settings.APP_VERSION,
         "debug": settings.DEBUG,
     }
+
+
+@app.get("/health")
+async def health():
+    """
+    Health check for load balancers and containers.
+    Returns 200 with database status; 503 if database is unreachable.
+    """
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "ok"}
+    except Exception as e:
+        logging.getLogger(__name__).warning("Health check failed: %s", e)
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unhealthy", "database": "error", "detail": str(e)},
+        )
 
 
 def start():

@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     # Optional path to extraction prompt file. If set and file exists, use it instead of built-in prompt.
     # File must contain {raw_text}. Edit this file to adapt to different invoice formats without code changes.
     EXTRACTION_PROMPT_FILE: str | None = None
+    # CORS: comma-separated list of allowed origins (e.g. "http://localhost:3000,https://app.example.com"). Empty = same-origin only.
+    CORS_ORIGINS: str = ""
 
 
 settings = Settings()

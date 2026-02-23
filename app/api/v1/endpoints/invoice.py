@@ -1,11 +1,15 @@
-from fastapi import APIRouter, UploadFile, File, Depends, Body
+from datetime import date
+from typing import Optional
+
+from fastapi import APIRouter, Depends, File, Query, UploadFile, Body
 from app.core.dependencies import get_invoice_service
-from app.services.invoice_service import InvoiceService
+from app.models.invoice import ProcessingStatus
 from app.schemas.invoice import (
     InvoiceListResponse,
     InvoiceResponse,
     InvoiceTaxExemptUpdate,
 )
+from app.services.invoice_service import InvoiceService
 
 router = APIRouter()
 
@@ -37,12 +41,33 @@ async def upload_and_process_invoice(
 @router.get(
     "/",
     response_model=InvoiceListResponse,
-    summary="List all invoices",
+    summary="List invoices with pagination and filters",
 )
 async def list_invoices(
     service: InvoiceService = Depends(get_invoice_service),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(50, ge=1, le=100, description="Max records to return"),
+    status: Optional[ProcessingStatus] = Query(
+        None, description="Filter by processing status"
+    ),
+    vendor_name: Optional[str] = Query(
+        None, description="Filter by vendor name (case-insensitive contains)"
+    ),
+    created_after: Optional[date] = Query(
+        None, description="Invoices created on or after this date (YYYY-MM-DD)"
+    ),
+    created_before: Optional[date] = Query(
+        None, description="Invoices created on or before this date (YYYY-MM-DD)"
+    ),
 ) -> InvoiceListResponse:
-    return await service.get_all_invoices()
+    return await service.get_all_invoices(
+        skip=skip,
+        limit=limit,
+        status=status,
+        vendor_name=vendor_name,
+        created_after=created_after,
+        created_before=created_before,
+    )
 
 
 @router.get(
@@ -55,6 +80,22 @@ async def get_invoice(
     service: InvoiceService = Depends(get_invoice_service),
 ) -> InvoiceResponse:
     return await service.get_invoice_by_id(invoice_id)
+
+
+@router.post(
+    "/{invoice_id}/reprocess",
+    response_model=InvoiceResponse,
+    summary="Re-run the pipeline for an existing invoice",
+)
+async def reprocess_invoice(
+    invoice_id: str,
+    service: InvoiceService = Depends(get_invoice_service),
+) -> InvoiceResponse:
+    """
+    Re-process an invoice (OCR, extraction, validation, anomaly) using the current
+    whitelist and tax-exemption settings. Use after updating whitelist or extraction prompt.
+    """
+    return await service.reprocess_invoice(invoice_id)
 
 
 @router.patch(

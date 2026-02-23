@@ -1,8 +1,11 @@
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from datetime import date
 from typing import Optional
-from app.repositories.invoice_repository_interface import IInvoiceRepository
+
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.invoice import Invoice, ProcessingStatus
+from app.repositories.invoice_repository_interface import IInvoiceRepository
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,6 +32,41 @@ class InvoiceRepository(IInvoiceRepository):
     async def get_all(self) -> list[Invoice]:
         result = await self.db.execute(select(Invoice))
         return list(result.scalars().all())
+
+    async def get_paginated(
+        self,
+        skip: int = 0,
+        limit: int = 50,
+        status: Optional[ProcessingStatus] = None,
+        vendor_name_contains: Optional[str] = None,
+        created_after: Optional[date] = None,
+        created_before: Optional[date] = None,
+    ) -> tuple[list[Invoice], int]:
+        conditions = []
+        if status is not None:
+            conditions.append(Invoice.status == status)
+        if vendor_name_contains is not None and vendor_name_contains.strip():
+            conditions.append(
+                Invoice.vendor_name.ilike(f"%{vendor_name_contains.strip()}%")
+            )
+        if created_after is not None:
+            conditions.append(
+                func.date(Invoice.created_at) >= created_after
+            )
+        if created_before is not None:
+            conditions.append(
+                func.date(Invoice.created_at) <= created_before
+            )
+        base = select(Invoice)
+        count_stmt = select(func.count()).select_from(Invoice)
+        if conditions:
+            base = base.where(*conditions)
+            count_stmt = count_stmt.where(*conditions)
+        total_result = await self.db.execute(count_stmt)
+        total = total_result.scalar() or 0
+        stmt = base.order_by(Invoice.created_at.desc()).offset(skip).limit(limit)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all()), total
 
     async def update(self, entity: Invoice) -> Invoice:
         await self.db.commit()

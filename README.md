@@ -117,22 +117,39 @@ The API runs at **http://localhost:8000**.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET`  | `/` | Health/info |
-| `POST` | `/api/v1/invoices/upload` | Upload an invoice (PDF, PNG, JPG) |
-| `GET`  | `/api/v1/invoices/` | List all invoices |
+| `GET`  | `/` | App info (name, version, debug) |
+| `GET`  | `/health` | Health check (DB, optional Redis) |
+| `POST` | `/api/v1/invoices/upload` | Upload and process an invoice (PDF, PNG, JPG) |
+| `GET`  | `/api/v1/invoices/` | List invoices (supports `skip`, `limit`, `status`, `vendor_name`, `created_after`, `created_before`) |
 | `GET`  | `/api/v1/invoices/{id}` | Get one invoice |
-| `DELETE` | `/api/v1/invoices/{id}` | Delete an invoice |
-| `POST` | `/api/v1/product/` | Create product |
-| `GET`  | `/api/v1/product/` | List all products |
-| `GET`  | `/api/v1/product/{id}` | Get one product |
-| `DELETE` | `/api/v1/product/{id}` | Deactivate product |
+| `PATCH` | `/api/v1/invoices/{id}/tax-exemption` | Update tax exemption status |
+| `POST` | `/api/v1/invoices/{id}/reprocess` | Re-run the pipeline for an existing invoice |
+| `DELETE` | `/api/v1/invoices/{id}` | Delete an invoice (and its file from disk) |
+| `POST` | `/api/v1/whitelist/` | Add a whitelisted vendor |
+| `GET`  | `/api/v1/whitelist/` | List whitelisted vendors |
+| `DELETE` | `/api/v1/whitelist/{id}` | Deactivate a whitelisted vendor |
 
 Uploaded files are stored under the `uploads/` directory (configurable via `UPLOAD_DIR` in config).
+
+### Optional environment variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OLLAMA_BASE_URL` | Ollama API base URL | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Model used for extraction and anomaly | `llama3.2:8b` |
+| `OLLAMA_VISION_MODEL` | Vision model for OCR (if using vision LLM) | (empty) |
+| `OCR_USE_VISION_LLM` | Use vision LLM for OCR when set | `False` |
+| `OCR_USE_DOCLING` | Use Docling for document parsing | `True` |
+| `EXTRACTION_PROMPT_FILE` | Path to custom extraction prompt file | (none) |
+| `MAX_UPLOAD_SIZE_MB` | Max upload size in MB | `10.0` |
+| `UPLOAD_DIR` | Directory for uploaded files | `uploads` |
+| `CORS_ORIGINS` | Comma-separated allowed origins for CORS (empty = same-origin only) | (empty) |
 
 ## Development
 
 - **Format code:** `poetry run ruff format app migrations`
 - **Lint:** `poetry run ruff check app migrations`
+- **Tests:** `poetry run pytest tests/ -v`
 
 ## Project structure
 
